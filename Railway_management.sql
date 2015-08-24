@@ -1,0 +1,603 @@
+drop table Schedule;
+drop table Account;
+drop table Transaction;
+drop table Status;
+drop table Passenger;
+drop table Station;
+drop table Train;
+
+
+
+--	TABLE CREATION----
+CREATE TABLE Train(
+TRAIN_ID NUMBER(6) ,
+TRAIN_NAME VARCHAR(20) UNIQUE,
+TYPE VARCHAR(20),
+SOURCE VARCHAR(20),
+DESTINATION VARCHAR(20),
+CAPACITY NUMBER(6),
+PRIMARY KEY (TRAIN_ID)
+);
+
+
+CREATE TABLE Station(
+STATION_ID NUMBER(6) NOT NULL,
+STATION_NAME VARCHAR(30) NOT NULL,
+TICKET_AVAILABLE NUMBER(6),
+PRIMARY KEY (STATION_ID)
+);
+
+CREATE TABLE Schedule(
+	TRAIN_ID NUMBER(6),
+		STATION_ID NUMBER(6),
+		ARRIVAL_TIME VARCHAR(20),
+DEPARTURE_TIME VARCHAR(20),
+		FOREIGN KEY (TRAIN_ID) REFERENCES Train (TRAIN_ID),
+FOREIGN KEY (STATION_ID) REFERENCES Station (STATION_ID)
+);
+
+CREATE TABLE Passenger(
+ACCOUNT_NO VARCHAR(20) NOT NULL,
+AGE NUMBER(6),
+SEX VARCHAR(20),
+TRAIN_ID NUMBER(6),
+		STATION_ID NUMBER(6),
+PRIMARY KEY (ACCOUNT_NO),
+FOREIGN KEY (TRAIN_ID) REFERENCES Train (TRAIN_ID),
+FOREIGN KEY (STATION_ID) REFERENCES Station (STATION_ID) ON DELETE CASCADE
+);
+
+CREATE TABLE Account(
+ACCOUNT_NO VARCHAR(20),
+P_DATE DATE,
+AMMOUNT VARCHAR(20),
+FOREIGN KEY (ACCOUNT_NO) REFERENCES Passenger (ACCOUNT_NO)
+);
+
+
+CREATE TABLE Status(
+SEAT_NO VARCHAR(20) PRIMARY KEY,
+--AVAILABILITY VARCHAR(20),
+JOURNEY_DATE DATE,
+SEAT_TYPE VARCHAR(20),
+NUMBER_OF_TICKET NUMBER(6),
+ACCOUNT_NO VARCHAR(20),
+FOREIGN KEY (ACCOUNT_NO) REFERENCES Passenger (ACCOUNT_NO) ON DELETE CASCADE
+);
+
+
+	--MODIFY A TABLE NAME--
+	ALTER TABLE Account
+		RENAME TO Transaction;
+
+	--Modify a column data type--
+     ALTER TABLE Transaction
+      	MODIFY AMMOUNT NUMBER(6);
+
+    --CONSTRAINTS--
+    ALTER TABLE Status
+    	MODIFY  NUMBER_OF_TICKET CHECK(NUMBER_OF_TICKET>0 AND NUMBER_OF_TICKET<5);
+
+    --MODIFY A COLUM NAME--
+    ALTER TABLE Transaction
+    	RENAME  COLUMN P_DATE TO BOOKING_DATE;
+
+        --add a column--
+        ALTER TABLE Status
+            RENAME COLUMN SEAT_TYPE TO COACH_TYPE;
+
+        ALTER TABLE Train
+            ADD STARTING_TIME VARCHAR(8);
+
+
+--MAKE A FOREIGN KEY AFTER CREATION OF TABLE--
+
+
+    ---------------------------------------------------------------------TRIGGER------------------------------------------------------------------------------------------------
+    SET SERVEROUTPUT ON;
+
+    CREATE OR REPLACE TRIGGER CHECK_TRIGGER 
+    BEFORE UPDATE OR INSERT ON Status
+    FOR EACH ROW
+
+    BEGIN
+        IF :NEW.NUMBER_OF_TICKET<0   THEN
+
+          RAISE_APPLICATION_ERROR(-20000,'YOU MUST SELECT AT LEAST 1 ITEMS ');
+
+       ELSIF :NEW.NUMBER_OF_TICKET>5 THEN
+
+          RAISE_APPLICATION_ERROR(-20000,'YOU HAVE REACHED YOUR LIMIT');
+
+        END IF;
+
+    END CHECK_TRIGGER;
+    /
+
+
+
+    CREATE OR REPLACE TRIGGER NEG_TRGR
+
+    BEFORE UPDATE OR INSERT ON  Passenger
+    FOR EACH ROW
+
+    DECLARE
+        MIN_AGE CONSTANT NUMBER (8) :=0;
+
+    BEGIN
+        IF :NEW.AGE<MIN_AGE THEN
+            RAISE_APPLICATION_ERROR(-20000,'AGE BEING NEGATIVE IS INVALID');
+
+        END IF;
+
+    END NEG_TRGR;
+    /
+----------------------------------------------------------------END OF TRIGGER------------------------------------------------------------------------------------
+  
+INSERT INTO Train VALUES(701,'SIMANTO EXPRESS','INTERCITY','SYEDPUR','KHULNA',800,'7:00PM');
+INSERT INTO Train VALUES(702,'SUNDORBON EXPRESS','INTERCITY','KHULNA','DHAKA',920,'7:35PM');
+INSERT INTO Train VALUES(747,'MOHANAGAR PROVATI','INTERCITY','DHAKA','CHITTAGONG',700,'8:00AM');
+INSERT INTO Train VALUES(407,'PODDORAG EXPRESS','MAIL','SANTAHAR','LALMONIRHAT',600,'7:00AM');
+INSERT INTO Train VALUES(715,'RANGPUR EXPRESS','INTERCITY','RANGPUR','DHAKA',1000,'7:50PM');
+INSERT INTO Train VALUES(489,'ROCKET MAIL','MAIL','KHULNA','RAJSHAHI',760,'2:00PM');
+INSERT INTO Train VALUES(700,'EKOTA EXPRESS','INTERCITY','DHAKA','DEWANGANJ',1000,'10:00PM');
+
+
+INSERT INTO Station VALUES(3947,'PARBOTIPUR',60);
+INSERT INTO Station VALUES(2348,'CHUADANGA',30);
+INSERT INTO Station VALUES(1234,'VOIROB',40);
+INSERT INTO Station VALUES(0034,'ISHURDI',80);
+INSERT INTO Station VALUES(1678,'GAIBANDHA',160);
+INSERT INTO Station VALUES(4567,'PIRGACHA',20);
+INSERT INTO Station VALUES(4926,'PIRGACHA',50);
+INSERT INTO Station VALUES(1223,'MYMENSINGH',100);
+INSERT INTO Station VALUES(1229,'ISLAMPUR',100);
+
+
+
+INSERT INTO Schedule VALUES(701,3947,'7:40PM','7:46PM');
+INSERT INTO Schedule VALUES(747,1234,'12:00PM','12:03PM');
+INSERT INTO Schedule VALUES(702,0034,'1:30AM','1:39AM');
+INSERT INTO Schedule VALUES(407,1678,'10:00AM','10:15AM');
+INSERT INTO Schedule VALUES(715,4567,'8:20PM','8:22PM');
+INSERT INTO Schedule VALUES(700,1223,'8:20PM','8:22PM');
+INSERT INTO Schedule VALUES(700,1229,'11:20PM','11:23PM');
+INSERT INTO Schedule VALUES(701,2348,'1.00AM','1.06AM');
+INSERT INTO Schedule VALUES(702,2348,'12.20AM','12.24AM');
+
+
+
+INSERT INTO Passenger VALUES('0212',21,'M',701,3947);
+INSERT INTO Passenger VALUES('0213',18,'F',702,2348);
+INSERT INTO Passenger VALUES('0012',32,'M',747,1234);
+INSERT INTO Passenger VALUES('0345',50,'M',715,4567);
+INSERT INTO Passenger VALUES('0101',21,'F',407,1678);
+INSERT INTO Passenger VALUES('0055',-25,'M',700,1229);
+INSERT INTO Passenger VALUES('0005',25,'M',700,1223);
+INSERT INTO Passenger VALUES('0567',29,'M',701,0034);
+INSERT INTO Passenger VALUES('0223',23,'M',701,0034);
+
+
+
+INSERT INTO STATUS VALUES('T-101','06-JULY-2015','FC',2,'0212');
+INSERT INTO STATUS VALUES('R-11','13-JULY-2014','SC',1,'0213');
+INSERT INTO STATUS VALUES('S-01','06-AUGUST-2015','C',5,'0212');
+INSERT INTO STATUS VALUES('B-101','10-SEPTEMBER-2014','FC',2,'0223');
+INSERT INTO STATUS VALUES('W-101','06-JULY-2015','SC',3,'0567');
+INSERT INTO STATUS VALUES('A-10','16-JULY-2015','SC',3,'0345');
+INSERT INTO STATUS VALUES('B-10','19-SEPTEMBER-2015','FC',3,'0345');
+
+
+INSERT INTO Transaction VALUES('0212','05-JULY-2014',700);
+INSERT INTO Transaction VALUES('0213','05-AUGUST-2014',300);
+INSERT INTO Transaction VALUES('0012','03-JUNE-2015',2300);
+INSERT INTO Transaction VALUES('0345','12-JULY-2015',500);
+INSERT INTO Transaction VALUES('0101','05-JULY-2014',700);
+INSERT INTO Transaction VALUES('0223','05-SEPTEMBER-2014',1100);
+INSERT INTO Transaction VALUES('0567','06-SEPTEMBER-2015',1500);
+
+
+
+---------------------------------------------------SHOW ALL COLUMNS AND ALL ROWS-----------------------------
+ SELECT TRAIN_ID,TRAIN_NAME,TYPE,SOURCE,DESTINATION,CAPACITY,STARTING_TIME
+ FROM TRAIN;
+
+ ----------------------------------------SHOW ALL COLUMNS AND ALL ROWS BY USING *----------------------------
+ SELECT * FROM Status;
+
+ -----------------------------------FIND THE DISTINCT STATION NAME-------------------------------------------
+
+ SELECT DISTINCT(STATION_NAME) AS ST_NAME FROM Station;
+
+ SELECT TRAIN_NAME ,SOURCE,DESTINATION FROM TRAIN
+ WHERE TYPE='INTERCITY';
+
+ ----------------divide the AMMOUNT of A CUSTOMER who have ACCOUNT number 0012.
+
+ SELECT (AMMOUNT/5) FROM Transaction WHERE ACCOUNT_NO='0012';
+
+ ---------ALISING-------------
+ SELECT (AMMOUNT/5) AS COST FROM Transaction WHERE ACCOUNT_NO='0012';
+
+------FIND THE TRAIN NAME WHOSE ID IS 700 OR 712---
+SELECT TRAIN_NAME,TYPE,SOURCE,DESTINATION 
+FROM TRAIN
+WHERE TRAIN_ID=700 OR TRAIN_ID=712;
+
+------FIND THE TRAIN NAME WHOSE ID IS 700 OR 712------
+SELECT TRAIN_NAME,TYPE,SOURCE,DESTINATION  
+FROM TRAIN
+WHERE TRAIN_ID BETWEEN 700 AND 712;
+
+
+------FIND THE TRAIN NAME WHOSE ID IS  NOT BETWEEN 700 OR 712------
+
+SELECT TRAIN_NAME,TYPE,SOURCE,DESTINATION  
+FROM TRAIN
+WHERE TRAIN_ID NOT  BETWEEN 700 AND 712;
+
+------FIND THE TRAIN NAME WHOSE ID IS  EXACTLY 702 OR 700------
+SELECT TRAIN_NAME,TYPE,SOURCE,DESTINATION  
+FROM TRAIN
+WHERE TRAIN_ID IN (700,702);
+
+--------------PATTERN MATCHING--------------------
+SELECT STATION_ID,TICKET_AVAILABLE
+FROM Station
+WHERE STATION_NAME LIKE '%HURDI%';
+
+----------FIND THE TRAIN ID,STATION ID,AGE,SEX,PNR ACCORDING TO AGE-----
+SELECT ACCOUNT_NO,TRAIN_ID,STATION_ID,AGE,SEX
+FROM Passenger
+ORDER BY AGE;
+
+----------FIND THE TRAIN ID,STATION ID,AGE,SEX,PNR ACCORDING TO AGE IN DESCENDING ORDER-----
+SELECT  ACCOUNT_NO,TRAIN_ID,STATION_ID,AGE,SEX
+FROM Passenger
+ORDER BY AGE DESC;
+
+----------AGGREGATE FUNCTION----------------------------
+-------------------FIND THE ACCOUNT  NUMBER WHO BOUGHT MAXIMUM NUMBER OF TICKETS---
+SELECT MAX(NUMBER_OF_TICKET) 
+FROM STATUS;
+
+
+
+
+
+
+-------------------------------------------------------------COUNT--------------------------------------------
+SELECT COUNT(*) FROM Status;
+SELECT COUNT(NUMBER_OF_TICKET) FROM  Status;
+
+
+------------------------------------------------------------sum------------------------------------------------
+
+SELECT SUM(NUMBER_OF_TICKET) 
+FROM STATUS;
+
+SELECT SUM( distinct NUMBER_OF_TICKET) 
+FROM STATUS;
+
+
+
+----------------------------------------------------------GROUP BY----------------------------------------------
+
+SELECT TRAIN_ID,COUNT(SEX)
+FROM Passenger
+WHERE SEX='F'
+GROUP BY TRAIN_ID
+;
+
+SELECT TRAIN_ID,COUNT(STATION_ID)
+FROM Schedule
+GROUP BY TRAIN_ID;
+
+---------------------------------------------------------HAVING---------------------------------------------------
+SELECT TRAIN_ID
+FROM Schedule
+GROUP BY TRAIN_ID
+HAVING COUNT(STATION_ID)>=2;
+
+
+SELECT BOOKING_DATE,COUNT(ACCOUNT_NO)
+FROM Transaction
+GROUP BY BOOKING_DATE
+HAVING COUNT(ACCOUNT_NO)>1;
+
+
+--------------------------------------------------------UNION--------------------------------------------------------
+SELECT TRAIN_NAME 
+FROM Train
+UNION
+SELECT STATION_NAME
+FROM STATION;
+
+------------------------------------------INTERSECTION WITH SUBQUERY--------------------------------------------------
+SELECT TRAIN_NAME FROM TRAIN WHERE TRAIN_ID IN(SELECT  TRAIN_ID
+FROM  Schedule WHERE STATION_ID=2348) 
+INTERSECT
+SELECT TRAIN_NAME FROM TRAIN WHERE TRAIN_ID IN(SELECT TRAIN_ID
+FROM Schedule WHERE STATION_ID=3947);
+
+
+
+--------------------------------------------------MINUS---------------------------------------------------------------
+SELECT TRAIN_NAME FROM TRAIN WHERE TRAIN_ID IN(SELECT  TRAIN_ID
+FROM  Schedule WHERE STATION_ID=2348) 
+MINUS
+SELECT TRAIN_NAME FROM TRAIN WHERE TRAIN_ID IN(SELECT TRAIN_ID
+FROM Schedule WHERE STATION_ID=1234);
+
+
+----------------------------------NESTED QUERY/SUBQUERY----------------------------------------------------------------
+SELECT TRAIN_NAME,TYPE,SOURCE,DESTINATION,STARTING_TIME FROM TRAIN WHERE TRAIN_ID IN(SELECT  TRAIN_ID
+FROM  Schedule WHERE STATION_ID IN(SELECT STATION_ID FROM STATION WHERE STATION_NAME='PARBOTIPUR')) ;
+
+
+-------------------------------
+
+SELECT ACCOUNT_NO,AGE,SEX FROM PASSENGER WHERE TRAIN_ID IN(SELECT TRAIN_ID FROM Schedule WHERE STATION_ID IN
+  (SELECT STATION_ID FROM STATION WHERE TICKET_AVAILABLE>50));
+
+------------------------FIND THE STATION NAME,ARRIVAL TIME,DEPARTURE TIME -----------------------------------------------
+
+SELECT TRAIN_ID,STATION_NAME,ARRIVAL_TIME,DEPARTURE_TIME
+FROM SCHEDULE S,STATION P
+WHERE S.STATION_ID=P.STATION_ID AND TICKET_AVAILABLE>60;
+
+
+-----------------------------FIND THE STATION NAME,ARRIVAL TIME,DEPARTURE TIME USING JOIN----------------------------------
+
+  
+SELECT TRAIN_ID,STATION_NAME,ARRIVAL_TIME,DEPARTURE_TIME
+FROM Schedule S JOIN Station P
+ON S.STATION_ID=P.STATION_ID AND TICKET_AVAILABLE>70;
+
+
+-----------------------------FIND THE JPURNEY_DATE,NUMBER OF TICKETS,AGE  USING JOIN---------------------------------------
+
+SELECT JOURNEY_DATE,NUMBER_OF_TICKET,AGE,SEX
+FROM Status S JOIN Passenger P
+USING(ACCOUNT_NO) ;
+
+
+-----------------------------FIND THE STATION NAME,ARRIVAL TIME,DEPARTURE TIME USING NATURAL JOIN---------------------------
+
+  
+SELECT TRAIN_ID,STATION_NAME,ARRIVAL_TIME,DEPARTURE_TIME
+FROM Schedule S NATURAL JOIN Station P;
+
+
+
+-----------------------------CROSSS JOIN--------------------------------------------------------------------------------------
+SELECT E.TRAIN_ID,P.STATION_NAME
+FROM SCHEDULE E CROSS JOIN STATION P;
+
+
+-----------------------------------LEFT OUTER JOIN-----------------------------------------------------------------------------
+
+SELECT TRAIN_ID,STATION_NAME,ARRIVAL_TIME,DEPARTURE_TIME
+FROM Schedule S LEFT OUTER JOIN Station P
+ON S.STATION_ID=P.STATION_ID AND TICKET_AVAILABLE>70;
+
+------------------------------------------------------RIGHT OUTER JOIN---------------------------------------------------------
+
+SELECT TRAIN_ID,STATION_NAME,ARRIVAL_TIME,DEPARTURE_TIME
+FROM Schedule S RIGHT OUTER JOIN Station P
+ON S.STATION_ID=P.STATION_ID AND TICKET_AVAILABLE>70;
+
+-------------------------------------------------------FULL OUTER JOIN----------------------------------------------------------
+
+SELECT TRAIN_ID,STATION_NAME,ARRIVAL_TIME,DEPARTURE_TIME
+FROM Schedule S FULL OUTER JOIN Station P
+ON S.STATION_ID=P.STATION_ID AND TICKET_AVAILABLE>70;
+
+
+-----------------------------------------------------------------------SELF JOINS------------------------------------------------
+ SELECT N.TRAIN_ID,N.STATION_ID,M.AGE,M.SEX
+ FROM Passenger M JOIN Passenger N ON M.ACCOUNT_NO=N.ACCOUNT_NO;
+
+ ----------------------------PL/SQL-----------------------------------------------------------------------------------------------
+ ----------------------------------------FIND THE MAXIMUM NUMBER OF TICKET THAT ONE BOUGHT----------------------------------------
+ SET SERVEROUTPUT ON;
+ DECLARE 
+  MAX_TICKET Status.NUMBER_OF_TICKET%TYPE;
+BEGIN
+  SELECT MAX(NUMBER_OF_TICKET) INTO MAX_TICKET
+  FROM Status;
+  DBMS_OUTPUT.PUT_LINE('THE MAXIMUM NUMBER OF TICKET THAT ONE PERSON BOUGHT: '||MAX_TICKET);
+  END;
+  /
+
+
+  SET SERVEROUTPUT ON;
+ DECLARE 
+  T1 Schedule.ARRIVAL_TIME%TYPE;
+   St_NAME Station.STATION_NAME%TYPE:='PIRGACHA';
+BEGIN
+  SELECT ARRIVAL_TIME INTO T1
+  FROM Schedule,Station
+  WHERE Station.STATION_ID=Schedule.STATION_ID AND STATION_NAME=ST_NAME;
+  DBMS_OUTPUT.PUT_LINE('STATION: '||St_NAME ||' '|| 'TIME: ' ||T1);
+  END;
+  /
+
+
+-------------------------------------------------------------------------CURSOR--------------------------------------------------
+SET SERVEROUTPUT ON;
+DECLARE
+ CURSOR T_CUR IS SELECT TRAIN_ID,TRAIN_NAME FROM Train;
+ Train_RECORD T_CUR%ROWTYPE;
+
+ BEGIN
+    OPEN T_CUR;
+    LOOP 
+        FETCH T_CUR INTO Train_RECORD;
+        EXIT WHEN T_CUR%ROWCOUNT >5;
+      DBMS_OUTPUT.PUT_LINE ('TRAIN_ID: '||Train_RECORD.TRAIN_ID||' '|| Train_RECORD.TRAIN_NAME);
+
+END LOOP;
+ CLOSE T_CUR;
+END;
+/
+
+---------------------------------------------------------PROCEDURE----------------------------------------------------------------
+----------------------------------------FIND THE NAME OF A STATION WHERE STATION_ID:=3947-----------------------------------------
+SET SERVEROUTPUT ON;
+CREATE OR REPLACE PROCEDURE  GETDETAILS IS
+    S_ID Station.STATION_ID%TYPE;
+    S_NAME Station.STATION_NAME%TYPE;
+   
+
+    BEGIN
+     S_ID :=3947;
+        SELECT STATION_NAME INTO S_NAME
+      FROM Station
+       WHERE  STATION_ID=S_ID;
+
+
+     DBMS_OUTPUT.PUT_LINE('Station name: '||S_NAME);
+
+     END;
+     /
+     SHOW ERRORS;
+
+     BEGIN
+        GETDETAILS;
+      END;
+      /
+
+  --------------------------------------------UPDATE STATION_NAME ----------------------------------------------------------------
+
+  CREATE OR REPLACE PROCEDURE UPDATE_INFO(
+    S_NAME Station.STATION_NAME%TYPE,
+    S_ID Station.STATION_ID%TYPE)IS
+
+  BEGIN
+    UPDATE Station SET STATION_NAME=S_NAME WHERE STATION_ID=S_ID;
+      commit;
+END UPDATE_INFO;
+/
+
+SELECT STATION_ID,STATION_NAME FROM Station;
+
+BEGIN
+  UPDATE_INFO('JESSORE',2348);
+  UPDATE_INFO('BOGRA',4926);
+END;
+/
+SELECT STATION_ID,STATION_NAME FROM Station;
+
+--------------------------------------INSERT DATA INTO ROW OF A TRAIN ---------------------------------------------------------------
+
+SET SERVEROUTPUT ON;
+CREATE OR REPLACE PROCEDURE INSERT_INFO(
+  V_ID Train.TRAIN_ID%TYPE,
+V_NAME Train.TRAIN_NAME%TYPE,
+V_TYPE Train.TYPE%TYPE,
+V_SOURCE Train.SOURCE%TYPE,
+V_DEST Train.DESTINATION%TYPE,
+V_CAP Train.CAPACITY%TYPE,
+V_TIME Train.STARTING_TIME%TYPE )IS
+
+BEGIN
+    INSERT INTO TRAIN  VALUES
+    (V_ID,V_NAME,V_TYPE,V_SOURCE,V_DEST,V_CAP,V_TIME);
+    COMMIT;
+END INSERT_INFO;
+/
+SHOW ERRORS;
+
+BEGIN
+ INSERT_INFO(712,'SAGORDARI EXPRESS','INTERCITY','RAJSHAHI','KHULNA',900,'6:30AM');
+END;
+/
+SELECT  TRAIN_ID,TRAIN_NAME,TYPE FROM TRAIN;
+  
+
+
+
+--------------------------------------------------------------------END OF PROCEDURE---------------------------------------------------
+
+---------------------------------------------------FUNCTION----------------------------------------------------------------------------
+-------------------------------------------------CALCULATE THE VALUE OF TOTAL SOLD TICKET----------------------------------------------
+
+CREATE OR REPLACE FUNCTION GET_TOTAL RETURN NUMBER IS
+  TOTAL_TICKET Status.NUMBER_OF_TICKET%TYPE;
+
+BEGIN
+  SELECT SUM(NUMBER_OF_TICKET) INTO TOTAL_TICKET
+  FROM Status;
+  RETURN TOTAL_TICKET;
+  END;
+  /
+  SET SERVEROUTPUT ON
+  BEGIN
+    DBMS_OUTPUT.PUT_LINE('TOTAL SOLD TICKET: ' ||GET_TOTAL);
+  END;
+  /
+
+
+--------------------------------------FIND THE AVAERAGE AGE OF PASSENGERS WHO ALREADY BOOKED TICKET-------------------------------------
+
+  CREATE OR REPLACE FUNCTION avg_AGE RETURN NUMBER IS
+   avg_AGE Passenger.AGE%type;
+BEGIN
+  SELECT AVG(AGE) INTO avg_AGE
+  FROM Passenger;
+   RETURN avg_AGE;
+END;
+/
+
+SET SERVEROUTPUT ON
+  BEGIN
+    DBMS_OUTPUT.PUT_LINE('AVERAGE AGE : ' ||avg_AGE);
+  END;
+  /
+
+--------------------------------------------------TRANSACTION------------------------------------------------------------------------------
+     commit;
+     INSERT INTO Transaction VALUES('0212','15-JULY-2015',700);
+    SAVEPOINT ST_1;
+
+    INSERT INTO Transaction VALUES('0223','10-MARCH-2015',800);
+    SAVEPOINT ST_2;
+    ROLLBACK to ST_1;
+
+    select * from Transaction;
+
+    DELETE FROM Schedule;
+
+    SELECT TRAIN_ID,STATION_ID,ARRIVAL_TIME
+    FROM Schedule;
+
+   ROLLBACK;
+
+    SELECT TRAIN_ID,STATION_ID,ARRIVAL_TIME
+   FROM Schedule;
+    -- DELETE FROM Transaction;
+
+    -- ROLLBACK TO ST_1;
+
+    -- select * from Transaction;
+
+    SELECT SYSTIMESTAMP FROM DUAL;
+
+    SELECT ACCOUNT_NO,AMMOUNT 
+    FROM Transaction WHERE BOOKING_DATE<SYSDATE;
+
+
+
+SELECT * FROM Schedule;
+SELECT * FROM  Transaction;
+SELECT * FROM Status;
+SELECT * FROM  Passenger;
+SELECT * FROM  Station;
+SELECT * FROM  Train;
+
+
+
+
+    
+
